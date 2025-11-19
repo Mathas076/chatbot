@@ -1,40 +1,76 @@
-import { Button } from "@/components/Button";
-import { PromptText } from "@/components/PromptText";
-import { ResponseBox } from "@/components/ResponseBox";
-import '@/global.css';
-import axios from "axios";
+import "@/global.css";
+import CustomButton from "@/components/CustomButton";
+import PromptText from "@/components/PromptText";
 import { useState } from "react";
-import { KeyboardAvoidingView, ScrollView, Text, View } from "react-native";
+import { Alert, KeyboardAvoidingView, ScrollView, Text, View } from "react-native";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export default function Index() {
-const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;//APikeyde google desde .env
-  const ai = new <GoogleGenAI({ apiKey: API_KEY });
+  const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+
+  const [value, setValue] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [response, setResponse] = useState("");
+
+  // Inicializar la librería oficial
+  const ai = new GoogleGenerativeAI(API_KEY);
+
   const consultarGemini = async (pregunta: string) => {
-    setIsLoading(true);
-    await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: pregunta,
-    }).then((res) => {
-        if(res.text != undefined){
-          setResponse(res.text);
-        }else{
-          setResponse("No se pudo obtener la respuesta");
-        }
-    }).catch((err) => {
-      console.log(err);
-    }).finally(() => {
+    if (!pregunta.trim()) {
+      Alert.alert("Por favor escribe una pregunta");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setResponse("");
+
+      // Modelo oficial
+      const model = ai.getGenerativeModel({
+        model: "gemini-2.0-flash",
+      });
+
+      // Llamada usando generateContent
+      const result = await model.generateContent(pregunta);
+      const text = result.response.text();
+
+      if (text) {
+        setResponse(text);
+      } else {
+        setResponse("No se pudo obtener la respuesta");
+      }
+    } catch (error: any) {
+      console.error(error);
+      Alert.alert("Error al consultar Gemini", error.message || "Desconocido");
+    } finally {
       setIsLoading(false);
-    });
-}
+      setValue("");
+    }
+  };
+
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <Text>Edit app/index.tsx to edit this screen.</Text>
-    </View>
+    <KeyboardAvoidingView className="w-screen h-screen bg-white">
+      <ScrollView className="w-full h-full p-4">
+
+        <PromptText
+          onChangeText={(text) => setValue(text)}
+          value={value}
+        />
+
+        <CustomButton
+          isLoading={isLoading}
+          onPress={() => consultarGemini(value)}
+          title="Enviar pregunta"
+        />
+
+        {response ? (
+          <View className="mt-5 bg-gray-600 rounded-xl p-4">
+            <Text className="text-white font-semibold mb-2">Tu respuesta aqui:</Text>
+            <Text className="text-gray-200">{response}</Text>
+          </View>
+        ) : null}
+
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
