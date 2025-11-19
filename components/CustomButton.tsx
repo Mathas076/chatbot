@@ -10,7 +10,7 @@ type ButtonProps = {
 export default function CustomButton({ isLoading = false, onPress, title = "Enviar" }: ButtonProps) {
   return (
     <TouchableOpacity
-      className="bg-blue-600 p-3 rounded-lg mt-3 items-center"
+      className="bg-green-600 p-3 rounded-lg mt-3 items-center"
       onPress={onPress}
       disabled={isLoading}
     >
